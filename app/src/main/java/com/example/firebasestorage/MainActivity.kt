@@ -7,7 +7,9 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.firebasestorage.databinding.ActivityMainBinding
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
@@ -38,7 +40,7 @@ class MainActivity : AppCompatActivity() {
         val ivImage = binding.ivImage
         ivImage.setOnClickListener {
             Intent(Intent.ACTION_GET_CONTENT).also {
-                it.type = "image/*"
+                it.type = "images/*"
                 startActivityForResult(it, REQUEST_CODE_IMAGE_PICK)
             }
         }
@@ -57,6 +59,8 @@ class MainActivity : AppCompatActivity() {
         deleteImg.setOnClickListener {
             deleteImage("monImage")
         }
+
+        this.listFiles()
 
     }
 
@@ -102,6 +106,29 @@ class MainActivity : AppCompatActivity() {
                     .show()
             }
         } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_LONG)
+                    .show()
+            }
+        }
+    }
+
+    private fun listFiles() = CoroutineScope(Dispatchers.IO).launch {
+        try {
+            val images = imageRef.child("images/").listAll().await()
+            val imagesUrls = mutableListOf<String>()
+            for(image in images.items) {
+                val url = image.downloadUrl.await()
+                imagesUrls.add(url.toString())
+            }
+            withContext(Dispatchers.Main) {
+                val imageAdapter = ImageAdapter(imagesUrls)
+                binding.rvImages.apply {
+                    adapter = imageAdapter
+                    layoutManager = LinearLayoutManager(this@MainActivity)
+                }
+            }
+        }catch (e: Exception) {
             withContext(Dispatchers.Main) {
                 Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_LONG)
                     .show()
