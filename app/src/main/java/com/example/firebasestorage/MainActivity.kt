@@ -2,6 +2,8 @@ package com.example.firebasestorage
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -43,7 +45,12 @@ class MainActivity : AppCompatActivity() {
 
         val btnUploadImg = binding.btnUploadImage
         btnUploadImg.setOnClickListener {
-            uploadImageToStorage("mon_image")
+            uploadImageToStorage("monImage")
+        }
+
+        val btnDownloadImg = binding.btnDownloadImage
+        btnDownloadImg.setOnClickListener {
+            downloadImage("monImage")
         }
 
     }
@@ -58,6 +65,23 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         } catch(e: Exception) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_LONG)
+                    .show()
+            }
+        }
+    }
+
+    private fun downloadImage(filename: String) = CoroutineScope(Dispatchers.IO).launch {
+        try {
+            val maxDownloadSize = 5L * 1024 * 1024 //(5 Mo)
+            val bytes = imageRef.child("images/$filename").getBytes(maxDownloadSize).await()
+            // Convertir bytes en image
+            val bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            withContext(Dispatchers.Main) {
+                binding.ivImage.setImageBitmap(bmp)
+            }
+        } catch (e: Exception) {
             withContext(Dispatchers.Main) {
                 Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_LONG)
                     .show()
