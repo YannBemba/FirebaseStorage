@@ -53,6 +53,11 @@ class MainActivity : AppCompatActivity() {
             downloadImage("monImage")
         }
 
+        val deleteImg = binding.btnDeleteImage
+        deleteImg.setOnClickListener {
+            deleteImage("monImage")
+        }
+
     }
 
     private fun uploadImageToStorage(filename: String) = CoroutineScope(Dispatchers.IO).launch {
@@ -80,6 +85,21 @@ class MainActivity : AppCompatActivity() {
             val bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
             withContext(Dispatchers.Main) {
                 binding.ivImage.setImageBitmap(bmp)
+            }
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_LONG)
+                    .show()
+            }
+        }
+    }
+
+    private fun deleteImage(filename: String) = CoroutineScope(Dispatchers.IO).launch {
+        try {
+            imageRef.child("images/$filename").delete().await()
+            withContext(Dispatchers.Main) {
+                Toast.makeText(this@MainActivity, "Image supprimé", Toast.LENGTH_LONG)
+                    .show()
             }
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
